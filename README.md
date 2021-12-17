@@ -3,8 +3,7 @@
 ![alt](./diagram.png)
 
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkwiecek%2Fsp-monitoring%2Fmain%2FdeploySpMonitoringSub.json%3Ftoken%3DANT6EFHHIXZYT6R3Y3PYEKDBXSOZO)
-
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkwiecek%2Fsp-monitoring%2Fmain%2FdeploySpMonitoringSub.json)
 
 
 <!-- 
