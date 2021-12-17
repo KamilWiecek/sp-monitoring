@@ -1,0 +1,438 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.4.1124.51302",
+      "templateHash": "11538308462208003809"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2021-04-01",
+      "name": "rg-spmonitoring",
+      "location": "westeurope",
+      "tags": {
+        "owner": "kwiec@softserveinc.com"
+      },
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "spMonitoringDeploy",
+      "resourceGroup": "rg-spmonitoring",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.4.1124.51302",
+              "templateHash": "16174098377414762181"
+            }
+          },
+          "parameters": {
+            "nameSuffix": {
+              "type": "string",
+              "defaultValue": "spmonitoring",
+              "metadata": {
+                "description": "Required. Name of the Log Analytics workspace"
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Optional. Location for all resources."
+              }
+            },
+            "serviceTier": {
+              "type": "string",
+              "defaultValue": "PerGB2018",
+              "allowedValues": [
+                "Free",
+                "Standalone",
+                "PerNode",
+                "PerGB2018"
+              ],
+              "metadata": {
+                "description": "Required. Service Tier: PerGB2018, Free, Standalone, PerGB or PerNode"
+              }
+            },
+            "dataRetention": {
+              "type": "int",
+              "defaultValue": 365,
+              "maxValue": 730,
+              "minValue": 0,
+              "metadata": {
+                "description": "Required. Number of days data will be retained for"
+              }
+            },
+            "dailyQuotaGb": {
+              "type": "int",
+              "defaultValue": -1,
+              "minValue": -1,
+              "metadata": {
+                "description": "Optional. The workspace daily quota for ingestion."
+              }
+            },
+            "publicNetworkAccessForIngestion": {
+              "type": "string",
+              "defaultValue": "Enabled",
+              "allowedValues": [
+                "Enabled",
+                "Disabled"
+              ],
+              "metadata": {
+                "description": "Optional. The network access type for accessing Log Analytics ingestion."
+              }
+            },
+            "publicNetworkAccessForQuery": {
+              "type": "string",
+              "defaultValue": "Enabled",
+              "allowedValues": [
+                "Enabled",
+                "Disabled"
+              ],
+              "metadata": {
+                "description": "Optional. The network access type for accessing Log Analytics query."
+              }
+            },
+            "useResourcePermissions": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Optional. Set to 'true' to use resource or workspace permissions and 'false' (or leave empty) to require workspace permissions."
+              }
+            },
+            "diagnosticLogsRetentionInDays": {
+              "type": "int",
+              "defaultValue": 365,
+              "maxValue": 365,
+              "minValue": 0,
+              "metadata": {
+                "description": "Optional. Specifies the number of days that logs will be kept for; a value of 0 will retain data indefinitely."
+              }
+            },
+            "diagnosticStorageAccountId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Resource ID of the diagnostic storage account."
+              }
+            },
+            "workspaceId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Resource ID of a log analytics workspace."
+              }
+            },
+            "eventHubAuthorizationRuleId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Resource ID of the event hub authorization rule for the Event Hubs namespace in which the event hub should be created or streamed to."
+              }
+            },
+            "eventHubName": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Name of the event hub within the namespace to which logs are streamed. Without this, an event hub is created for each log category."
+              }
+            },
+            "lock": {
+              "type": "string",
+              "defaultValue": "NotSpecified",
+              "metadata": {
+                "description": "Optional. Specify the type of lock."
+              },
+              "allowedValues": [
+                "CanNotDelete",
+                "NotSpecified",
+                "ReadOnly"
+              ]
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Optional. Tags of the resource."
+              }
+            },
+            "logsToEnable": {
+              "type": "array",
+              "defaultValue": [
+                "Audit"
+              ],
+              "allowedValues": [
+                "Audit"
+              ],
+              "metadata": {
+                "description": "Optional. The name of logs that will be streamed."
+              }
+            },
+            "metricsToEnable": {
+              "type": "array",
+              "defaultValue": [
+                "AllMetrics"
+              ],
+              "allowedValues": [
+                "AllMetrics"
+              ],
+              "metadata": {
+                "description": "Optional. The name of metrics that will be streamed."
+              }
+            }
+          },
+          "variables": {
+            "copy": [
+              {
+                "name": "diagnosticsLogs",
+                "count": "[length(parameters('logsToEnable'))]",
+                "input": {
+                  "category": "[parameters('logsToEnable')[copyIndex('diagnosticsLogs')]]",
+                  "enabled": true,
+                  "retentionPolicy": {
+                    "enabled": true,
+                    "days": "[parameters('diagnosticLogsRetentionInDays')]"
+                  }
+                }
+              },
+              {
+                "name": "diagnosticsMetrics",
+                "count": "[length(parameters('metricsToEnable'))]",
+                "input": {
+                  "category": "[parameters('metricsToEnable')[copyIndex('diagnosticsMetrics')]]",
+                  "timeGrain": null,
+                  "enabled": true,
+                  "retentionPolicy": {
+                    "enabled": true,
+                    "days": "[parameters('diagnosticLogsRetentionInDays')]"
+                  }
+                }
+              }
+            ],
+            "logAnalyticsWorkspaceName": "[format('log-{0}', parameters('nameSuffix'))]",
+            "storageAccountName": "[format('st{0}', parameters('nameSuffix'))]",
+            "appServicePlanName": "[format('asp-{0}', parameters('nameSuffix'))]",
+            "functionName": "[format('func-{0}', parameters('nameSuffix'))]",
+            "logAnalyticsSearchVersion": 1
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2020-08-01",
+              "name": "[variables('logAnalyticsWorkspaceName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "features": {
+                  "searchVersion": "[variables('logAnalyticsSearchVersion')]",
+                  "enableLogAccessUsingOnlyResourcePermissions": "[parameters('useResourcePermissions')]"
+                },
+                "sku": {
+                  "name": "[parameters('serviceTier')]"
+                },
+                "retentionInDays": "[parameters('dataRetention')]",
+                "workspaceCapping": {
+                  "dailyQuotaGb": "[parameters('dailyQuotaGb')]"
+                },
+                "publicNetworkAccessForIngestion": "[parameters('publicNetworkAccessForIngestion')]",
+                "publicNetworkAccessForQuery": "[parameters('publicNetworkAccessForQuery')]"
+              }
+            },
+            {
+              "condition": "[or(or(or(not(empty(parameters('diagnosticStorageAccountId'))), not(empty(parameters('workspaceId')))), not(empty(parameters('eventHubAuthorizationRuleId')))), not(empty(parameters('eventHubName'))))]",
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', variables('logAnalyticsWorkspaceName'))]",
+              "name": "[format('{0}-diagnosticSettings', variables('logAnalyticsWorkspaceName'))]",
+              "properties": {
+                "storageAccountId": "[if(not(empty(parameters('diagnosticStorageAccountId'))), parameters('diagnosticStorageAccountId'), null())]",
+                "workspaceId": "[if(not(empty(parameters('workspaceId'))), parameters('workspaceId'), null())]",
+                "eventHubAuthorizationRuleId": "[if(not(empty(parameters('eventHubAuthorizationRuleId'))), parameters('eventHubAuthorizationRuleId'), null())]",
+                "eventHubName": "[if(not(empty(parameters('eventHubName'))), parameters('eventHubName'), null())]",
+                "metrics": "[variables('diagnosticsMetrics')]",
+                "logs": "[variables('diagnosticsLogs')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]"
+              ]
+            },
+            {
+              "condition": "[not(equals(parameters('lock'), 'NotSpecified'))]",
+              "type": "Microsoft.Authorization/locks",
+              "apiVersion": "2016-09-01",
+              "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', variables('logAnalyticsWorkspaceName'))]",
+              "name": "[format('{0}-{1}-lock', variables('logAnalyticsWorkspaceName'), parameters('lock'))]",
+              "properties": {
+                "level": "[parameters('lock')]",
+                "notes": "[if(equals(parameters('lock'), 'CanNotDelete'), 'Cannot delete resource or child resources.', 'Cannot modify the resource or child resources.')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2021-04-01",
+              "name": "[variables('storageAccountName')]",
+              "location": "[resourceGroup().location]",
+              "kind": "StorageV2",
+              "sku": {
+                "name": "Standard_LRS"
+              },
+              "properties": {
+                "encryption": {
+                  "keySource": "Microsoft.Storage",
+                  "services": {
+                    "blob": {
+                      "enabled": true
+                    },
+                    "file": {
+                      "enabled": true
+                    },
+                    "queue": {
+                      "enabled": true
+                    },
+                    "table": {
+                      "enabled": true
+                    }
+                  },
+                  "requireInfrastructureEncryption": true
+                },
+                "allowBlobPublicAccess": false
+              }
+            },
+            {
+              "type": "Microsoft.Web/serverfarms",
+              "apiVersion": "2021-01-15",
+              "name": "[variables('appServicePlanName')]",
+              "location": "[resourceGroup().location]",
+              "sku": {
+                "tier": "Dynamic",
+                "name": "Y1"
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2021-01-15",
+              "name": "[variables('functionName')]",
+              "kind": "Functionapp",
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+                "siteConfig": {
+                  "appSettings": [
+                    {
+                      "name": "FUNCTIONS_EXTENSION_VERSION",
+                      "value": "~4"
+                    },
+                    {
+                      "name": "FUNCTIONS_WORKER_RUNTIME",
+                      "value": "powershell"
+                    },
+                    {
+                      "name": "AzureWebJobsStorage",
+                      "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix=core.windows.net', variables('storageAccountName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2021-04-01').keys[0].value)]"
+                    },
+                    {
+                      "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+                      "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix=core.windows.net', variables('storageAccountName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2021-04-01').keys[0].value)]"
+                    },
+                    {
+                      "name": "WEBSITE_CONTENTSHARE",
+                      "value": "[format('{0}files', toLower(variables('functionName')))]"
+                    }
+                  ],
+                  "use32BitWorkerProcess": false,
+                  "ftpsState": "Disabled"
+                }
+              },
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Web/sites/functions",
+              "apiVersion": "2021-01-15",
+              "name": "[format('{0}/SetSpMonitoring', variables('functionName'))]",
+              "properties": {
+                "config": {
+                  "bindings": [
+                    {
+                      "name": "Timer",
+                      "type": "timerTrigger",
+                      "direction": "in",
+                      "schedule": "0 12 * * * *"
+                    }
+                  ]
+                },
+                "files": {
+                  "run.ps1": "using namespace System.Net\n\n# Input bindings are passed in via param block.\nparam($Timer)\n\n<#\n$resourceURI = \"https://management.azure.com/\"\n$tokenAuthURI = $env:IDENTITY_ENDPOINT + \"?resource=$resourceURI&api-version=2019-08-01\"\n$tokenResponse = Invoke-RestMethod -Method Get -Headers @{\"X-IDENTITY-HEADER\" = \"$env:IDENTITY_HEADER\" } -Uri $tokenAuthURI\n$accessToken = $tokenResponse.access_token\n\n# Write to the Azure Functions log stream.\nWrite-Host \"accessToken\"\nWrite-Host \"---------------------------------------------\"\n\nGet-AzResource -ResourceId '/subscriptions/b5339270-6213-4dd2-90ea-1ffeddd2a36d/resourcegroups/rg-azureadexport/providers/microsoft.operationalinsights/workspaces/log-azureadexport'\n#>\n\nfunction Get-AzToken {\n    [CmdletBinding()]\n    param (\n        [Parameter(Mandatory = $true)]\n        [String]\n        $ResourceUri,\n        [Switch]$AsHeader\n    ) \n    $Context = [Microsoft.Azure.Commands.Common.Authentication.Abstractions.AzureRmProfileProvider]::Instance.Profile.DefaultContext\n    Write-Host \"have context\"\n    $Token = [Microsoft.Azure.Commands.Common.Authentication.AzureSession]::Instance.AuthenticationFactory.Authenticate($context.Account, $context.Environment, $context.Tenant.Id.ToString(), $null, [Microsoft.Azure.Commands.Common.Authentication.ShowDialog]::Never, $null, $ResourceUri).AccessToken\n    Write-Host \"have token\"\n    if ($AsHeader) {\n        return @{Headers = @{Authorization = \"Bearer $Token\" } }\n    }\n    return $Token\n    \n}\n\n$context = Get-AzContext\n\n$Token = Get-AzToken -ResourceUri 'https://graph.microsoft.com/'\nConnect-MgGraph -AccessToken $Token\nWrite-Host \"graph connected\"\n\n#required for testing locally\n$exportPath = \"D:\\Home\\export\"\nif($context.Account.Type -eq 'User') {\n    $exportPath = \"$( (Get-Location).Path )\\export\"\n}\n\nif (Test-Path -Path $exportPath) {\n    Remove-Item -Path $exportPath -Recurse -Force #cleanup if needed\n}\n\nExport-AzureAD -Path $exportPath -Type \"Applications\"\n\n#region FUNCTIONS\n\nfunction Get-AppRegistrationConfiguration {\n    [CmdletBinding()]\n    param (\n        [Parameter()]\n        [string]\n        $AzureAdExportPath\n    )\n\n    $appsPath = Join-Path -Path $AzureAdExportPath -ChildPath Applications\n    $appItems = Get-ChildItem -Path $appsPath\n    $appObjects = @()\n\n    foreach ($appItem in $appItems) {\n        $appJsonPath = Join-Path -Path $appItem.FullName -ChildPath \"$($appItem.Name).json\"\n\n        $appJson = (Get-Content -Path $appJsonPath) -join ''\n        $app = $appJson | ConvertFrom-Json -Depth 100\n\n        # Write-Host -Object \"Processing app '$( $app.displayName )' [objectId: '$( $app.id )'] in file $( $appJsonPath )\"\n        \n        $appOwnersPath = Join-Path -Path $appItem.FullName -ChildPath 'Owners'\n        $appHasOwners = Test-Path -Path $appOwnersPath\n\n        if ($appHasOwners) {\n            $ownerItems = Get-ChildItem -Path $appOwnersPath\n\n            $appOwners = @()\n\n            foreach ($ownerItem in $ownerItems) {\n                $ownerJsonPath = Join-Path -Path $ownerItem.FullName -ChildPath \"$($ownerItem.Name).json\"\n                $ownerJson = (Get-Content -Path $ownerJsonPath) -join ''\n                $owner = $ownerJson | ConvertFrom-Json -Depth 100\n                $appOwners += $owner\n                # Write-Host -Object \"Found owner '$( $owner.displayName )' [objectId: '$( $owner.id )'] in file $( $ownerJsonPath )\"\n            }\n\n            $app | Add-Member -Name Owners -MemberType NoteProperty -Value $appOwners\n        }\n        $appObjects += $app\n    }\n\n    return $appObjects\n}\n\nfunction Get-AppRegistrationPasswordCredentialsConfiguration {\n    [CmdletBinding()]\n    param (\n        [Parameter()]\n        [array]\n        $AppRegistrationConfiguration\n    )\n\n    [array]$credentials = @()\n\n    $appObjectWithCredentials = $AppRegistrationConfiguration | Where-Object -FilterScript {\n        ($_.passwordCredentials.Count -gt 0) \n    }\n    \n    foreach ($appObj in $appObjectWithCredentials) {\n        $appObj.passwordCredentials | ForEach-Object -Process {\n            $credentials += ([PSCustomObject]@{\n                    AppDisplayName          = $appObj.displayName\n                    AppObjectId             = $appObj.id\n                    Description             = $_.displayName\n                    NoExpirationDate        = $_.endDateTime.Year -eq 2299\n                    Created                 = $_.startDateTime\n                    Expire                  = $_.endDateTime\n                    OwnersUpns              = $appObj.owners.userPrincipalName -join ','\n                    IsExpired               = ($_.endDateTime - (Get-Date)).TotalDays -lt 0\n                    WillExpireDays          = ($_.endDateTime - (Get-Date)).TotalDays \n                    WillExpireInOneWeek     = ($_.endDateTime - (Get-Date)).TotalDays -le 7\n                    WillExpireInOneMonth    = ($_.endDateTime - (Get-Date)).TotalDays -le 30\n                    WillExpireInThreeMonths = ($_.endDateTime - (Get-Date)).TotalDays -le 90\n                    HasLongExpirationDate   = $_.endDateTime -gt (Get-Date).AddYears(2)\n                })\n        }\n    }\n\n    return $credentials\n}\n\nfunction Get-AppRegistrationKeyCredentialsConfiguration {\n    [CmdletBinding()]\n    param (\n        [Parameter()]\n        [array]\n        $AppRegistrationConfiguration\n    )\n\n    [array]$credentials = @()\n\n    $appObjectWithCredentials = $AppRegistrationConfiguration | Where-Object -FilterScript {\n        ($_.keyCredentials.Count -gt 0) \n    }\n\n    foreach ($appObj in $appObjectWithCredentials) {\n        $appObj.keyCredentials | ForEach-Object -Process {\n            $credentials += ([PSCustomObject]@{\n                    AppDisplayName          = $appObj.displayName\n                    AppObjectId             = $appObj.id\n                    Description             = $_.displayName\n                    Created                 = $_.startDateTime\n                    Expire                  = $_.endDateTime\n                    IsExpired               = ($_.endDateTime - (Get-Date)).TotalDays -lt 0\n                    OwnersUpns              = $appObj.owners.userPrincipalName -join ','\n                    WillExpireDays          = ($_.endDateTime - (Get-Date)).TotalDays \n                    WillExpireInOneWeek     = ($_.endDateTime - (Get-Date)).TotalDays -le 7\n                    WillExpireInOneMonth    = ($_.endDateTime - (Get-Date)).TotalDays -le 30\n                    WillExpireInThreeMonths = ($_.endDateTime - (Get-Date)).TotalDays -le 90\n                    HasLongExpirationDate   = $_.endDateTime -gt (Get-Date).AddYears(2)\n                })\n        }\n    }\n\n    return $credentials\n}\n\nfunction New-AppRegistrationHtmlReport {\n    [CmdletBinding()]\n    param (\n        [Parameter()]\n        [array]\n        $AppRegistration,\n\n        [Parameter()]\n        [array]\n        $AppRegistrationWithOwner,\n        \n        [Parameter()]\n        [array]\n        $AppRegistrationWithoutOwner,\n\n        [Parameter()]\n        [array]\n        $PasswordCredentialsExpired,\n\n        [Parameter()]\n        [array]\n        $KeyCredentialsExpired,\n\n        [Parameter()]\n        [array]\n        $PasswordCredentialsExpiringSoon,\n\n        [Parameter()]\n        [array]\n        $KeyCredentialsExpiringSoon,\n\n        [Parameter()]\n        [array]\n        $PasswordCredentialsLongExpire,\n\n        [Parameter()]\n        [array]\n        $KeyCredentialsLongExpire,\n\n        [Parameter()]\n        [string]\n        $ReportExportPath\n    )\n\n    #region INIT REPORT\n\n    $reportTitle = \"App Registration Report for Tenant $( $tenantId )\"\n    # $reportLogoPath = './softserve-logo.jpg'\n    $reportName = 'app-reg-report'\n    \n    $report = New-Object -TypeName 'System.Collections.Generic.List[System.Object]'\n    \n    $htmlOpenPage = Get-HTMLOpenPage -TitleText $reportTitle # -LogoPath ./img/logo.png # $reportLogoPath\n    $report.Add($htmlOpenPage)\n\n    #endregion\n\n    #region SECRETS SUMMARY\n\n    $report.Add( $( Get-HTMLContentOpen -HeaderText \"SECRETS SUMMARY\") )\n\n    #region CREDENTIALS STATS\n\n    $report.Add( $(Get-HTMLColumn1of2 ) )\n\n    $credentialsSummaryChartTable = New-Object -TypeName 'System.Collections.Generic.List[System.Object]'\n        \n    $credentialsSummaryChartTable.Add(\n        [PSCustomObject]@{\n            Name  = 'Password Credentials Expired'\n            Count = $PasswordCredentialsExpired.Count\n        }\n    )\n\n    $credentialsSummaryChartTable.Add(\n        [PSCustomObject]@{\n            Name  = 'Key Credentials Expired'\n            Count = $KeyCredentialsExpired.Count\n        }\n    )\n\n    $credentialsSummaryChartTable.Add(\n        [PSCustomObject]@{\n            Name  = 'Password Credentials Expiring Soon'\n            Count = $PasswordCredentialsExpiringSoon.Count\n        }\n    )\n\n    $credentialsSummaryChartTable.Add(\n        [PSCustomObject]@{\n            Name  = 'Key Credentials Expiring Soon'\n            Count = $KeyCredentialsExpiringSoon.Count\n        }\n    )\n\n    $credentialsSummaryChartTable.Add(\n        [PSCustomObject]@{\n            Name  = 'Password Credentials Long Expire'\n            Count = $PasswordCredentialsLongExpire.Count\n        }\n    )\n    \n    $credentialsSummaryChartTable.Add(\n        [PSCustomObject]@{\n            Name  = 'Key Credentials Long Expire'\n            Count = $KeyCredentialsLongExpire.Count\n        }\n    )\n    \n    $credentialsSummaryChart = Get-HTMLPieChartObject\n    $credentialsSummaryChart.Title = \"CREDENTIALS STATS\"\n    $credentialsSummaryChart.Size.Height = 600\n    $credentialsSummaryChart.Size.width = 600\n    $credentialsSummaryChart.ChartStyle.ChartType = 'doughnut'\n    $credentialsSummaryChart.ChartStyle.ColorSchemeName = \"ColorScheme1\"\n    $credentialsSummaryChart.DataDefinition.DataNameColumnName = 'Name'\n    $credentialsSummaryChart.DataDefinition.DataValueColumnName = 'Count'\n\n    $report.Add( $( Get-HTMLContentOpen -HeaderText \"CREDENTIALS STATS\") )\n    $report.Add( $( Get-HTMLPieChart -ChartObject $credentialsSummaryChart -DataSet $credentialsSummaryChartTable) )\n    $report.Add( $( Get-HTMLContentClose) )\n\n    # $report.Add( $( Get-HTMLContentOpen -HeaderText \"EXPIRED (PASSWORD OR SECRET)\") )\n  \n    # $credentialsExpiredTable = New-Object -TypeName 'System.Collections.Generic.List[System.Object]'\n  \n    # ($reportInput.PasswordCredentialsExpired + $reportInput.KeyCredentialsExpired | Sort-Object -Property Expire | Select-Object -Property AppDisplayName, AppObjectId, OwnersUpns -Unique -First 20) | ForEach-Object -Process {\n    #     $credentialsExpiredTable.Add( $_) \n    # }\n  \n    # $report.Add( $( Get-HTMLContentDataTable -ArrayOfObjects $credentialsExpiredTable ) )\n    # $report.Add( $(Get-HTMLContentClose ) )\n\n    $report.Add( $(Get-HTMLColumnClose ) )\n\n    #endregion\n\n    #region EXPIRING\n\n    $report.Add( $(Get-HTMLColumn2Of2 ) )\n\n    $report.Add( $( Get-HTMLContentOpen -HeaderText \"EXPIRING (PASSWORD OR SECRET) - TOP20\") )\n\n    $credentialsExpiringTable = New-Object -TypeName 'System.Collections.Generic.List[System.Object]'\n  \n    $credentialsExpiringApps = ($reportInput.PasswordCredentialsExpiringSoon + $reportInput.KeyCredentialsExpiringSoon | Sort-Object -Property Expire | Select-Object -Property AppDisplayName, AppObjectId, OwnersUpns -Unique -First 20 )\n  \n    foreach ($app in $credentialsExpiringApps) {\n        [array]$appCreds = $reportInput.PasswordCredentialsExpiringSoon + $reportInput.KeyCredentialsExpiringSoon | Where-Object -Property AppObjectId -eq $app.AppObjectId\n        $expireDate = $appCreds.Expire | Sort-Object | Select-Object -First 1\n        $app | Add-Member -Name Expire -Value $expireDate -MemberType NoteProperty\n    }\n  \n    $credentialsExpiringApps | ForEach-Object -Process {\n        $credentialsExpiringTable.Add( $_) \n    }\n    $report.Add( $( Get-HTMLContentTable -ArrayOfObjects $credentialsExpiringTable ) )\n    $report.Add( $(Get-HTMLContentClose ) )\n  \n    $report.Add( $(Get-HTMLColumnClose ) )\n    \n    #endregion \n\n    $report.Add( $( Get-HTMLContentClose) )\n    \n    #endregion\n\n\n    #region EXPIRED PASSWORD CREDENTIALS\n    $passwordCredentialsExpiredTable = New-Object -TypeName 'System.Collections.Generic.List[System.Object]'\n    \n    $PasswordCredentialsExpired | Sort-Object -Property AppDisplayName, AppObjectId | ForEach-Object -Process {\n        $passwordCredentialsExpiredTable.Add(\n            ($_ | Select-Object -Property AppDisplayName, AppObjectId, Description, Expire, OwnersUpns)\n        )\n    }\n\n    $report.Add( $( Get-HTMLContentOpen -HeaderText \"EXPIRED PASSWORD CREDENTIALS\" <# -IsHidden #>) )\n    $report.Add( $( Get-HTMLContentDataTable -ArrayOfObjects $passwordCredentialsExpiredTable ) )\n    $report.Add( $( Get-HTMLContentClose) )\n\n    #endregion\n\n    #region EXPIRED KEY CREDENTIALS\n    $keyCredentialsExpiredTable = New-Object -TypeName 'System.Collections.Generic.List[System.Object]'\n\n    $KeyCredentialsExpired | Sort-Object -Property AppDisplayName, AppObjectId | ForEach-Object -Process {\n        $keyCredentialsExpiredTable.Add(\n            ($_ | Select-Object -Property AppDisplayName, AppObjectId, Description, Expire, OwnersUpns)\n        )\n    }\n    \n    $report.Add( $( Get-HTMLContentOpen -HeaderText \"EXPIRED KEY CREDENTIALS\" <# -IsHidden #>) )\n    if ($keyCredentialsExpiredTable.Count -gt 0) {\n        $report.Add( $( Get-HTMLContentDataTable -ArrayOfObjects $keyCredentialsExpiredTable ) )\n    }\n    $report.Add( $( Get-HTMLContentClose) )\n\n    #endregion\n\n    #region EXPIRING SOON PASSWORD CREDENTIALS\n    $passwordCredentialsExpiringTable = New-Object -TypeName 'System.Collections.Generic.List[System.Object]'\n    \n    $PasswordCredentialsExpiringSoon | Sort-Object -Property AppDisplayName, AppObjectId | ForEach-Object -Process {\n        $passwordCredentialsExpiringTable.Add(\n            ($_ | Select-Object -Property AppDisplayName, AppObjectId, Description, Created, Expire, OwnersUpns)\n        )\n    }\n\n    $report.Add( $( Get-HTMLContentOpen -HeaderText \"EXPIRING SOON PASSWORD CREDENTIALS\" <# -IsHidden #>) )\n    if ($passwordCredentialsExpiringTable.Count -gt 0) {\n        $report.Add( $( Get-HTMLContentDataTable -ArrayOfObjects $passwordCredentialsExpiringTable ) )\n    }\n    $report.Add( $( Get-HTMLContentClose) )\n\n    #endregion\n\n    #region EXPIRING SOON KEY CREDENTIALS\n    $keyCredentialsExpiringdTable = New-Object -TypeName 'System.Collections.Generic.List[System.Object]'\n\n    $KeyCredentialsExpiringSoon | Sort-Object -Property AppDisplayName, AppObjectId | ForEach-Object -Process {\n        $keyCredentialsExpiringdTable.Add(\n            ($_ | Select-Object -Property AppDisplayName, AppObjectId, Description, Created, Expire, OwnersUpns)\n        )\n    }\n    \n    $report.Add( $( Get-HTMLContentOpen -HeaderText \"EXPIRING SOON KEY CREDENTIALS\" <# -IsHidden #>) )\n    if ($keyCredentialsExpiringdTable.Count -gt 0) {\n        $report.Add( $( Get-HTMLContentDataTable -ArrayOfObjects $keyCredentialsExpiringdTable ) )\n    }\n    $report.Add( $( Get-HTMLContentClose) )\n\n    #endregion\n\n    #region LONG EXPIRE PASSWORD CREDENTIALS\n    $passwordCredentialsLongExpireTable = New-Object -TypeName 'System.Collections.Generic.List[System.Object]'\n    \n    $PasswordCredentialsLongExpire | Sort-Object -Property AppDisplayName, AppObjectId | ForEach-Object -Process {\n        $passwordCredentialsLongExpireTable.Add(\n            ($_ | Select-Object -Property AppDisplayName, AppObjectId, Description, Created, Expire)\n        )\n    }\n\n    $report.Add( $( Get-HTMLContentOpen -HeaderText \"LONG EXPIRE PASSWORD CREDENTIALS\" <# -IsHidden #>) )\n    $report.Add( $( Get-HTMLContentDataTable -ArrayOfObjects $passwordCredentialsLongExpireTable ) )\n    $report.Add( $( Get-HTMLContentClose) )\n\n    #endregion\n\n    #region LONG EXPIRE KEY CREDENTIALS\n    $keyCredentialsLongExpireTable = New-Object -TypeName 'System.Collections.Generic.List[System.Object]'\n    \n    $KeyCredentialsLongExpire | Sort-Object -Property AppDisplayName, AppObjectId | ForEach-Object -Process {\n        $keyCredentialsLongExpireTable.Add(\n            ($_ | Select-Object -Property AppDisplayName, AppObjectId, Description, Created, Expire, OwnersUpns)\n        )\n    }\n\n    $report.Add( $( Get-HTMLContentOpen -HeaderText \"LONG EXPIRE KEY CREDENTIALS\" <# -IsHidden #>) )\n    if ($keyCredentialsLongExpireTable.Count -gt 0) {\n        $report.Add( $( Get-HTMLContentDataTable -ArrayOfObjects $keyCredentialsLongExpireTable ) )\n    }\n    $report.Add( $( Get-HTMLContentClose) )\n\n    #endregion\n\n    #region MISSING OWNERS TABLE\n\n    $appRegistrationWithoutOwnerTable = New-Object -TypeName 'System.Collections.Generic.List[System.Object]'\n\n    $AppRegistrationWithoutOwner | Sort-Object -Property displayName, id | ForEach-Object -Process {\n        $appRegistrationWithoutOwnerTable.Add(\n            ($_ | Select-Object -Property DisplayName, ObjectId, CreatedDateTime, ExpiredPasswordCredentialsCount, ValidPasswordCredentialsCount, ExpiredKeyCredentialsCount, ValidKeyCredentialsCount )\n        )\n    }\n    \n    $report.Add( $( Get-HTMLContentOpen -HeaderText \"MISSING OWNER\" <# -IsHidden #>) )\n    $report.Add( $( Get-HTMLContentDataTable -ArrayOfObjects $appRegistrationWithoutOwnerTable ) ) #HTMLContentDataTable\n    $report.Add( $( Get-HTMLContentClose) )\n\n    #endregion\n\n    #region HAS OWNER CHARTS\n\n    # $appRegistrationWithOwnerChartTable = New-Object -TypeName 'System.Collections.Generic.List[System.Object]'\n        \n    # $appRegistrationWithOwnerChartTable.Add(\n    #     [PSCustomObject]@{\n    #         Name  = 'Missing owner'\n    #         Count = $AppRegistrationWithoutOwner.Count\n    #     }\n    # )\n    \n    # $appRegistrationWithOwnerChartTable.Add(\n    #     [PSCustomObject]@{\n    #         Name  = 'Has owner/s'\n    #         Count = $AppRegistrationWithOwner.Count\n    #     }\n    # )\n    \n    # $appRegistrationWithOwnerChart = Get-HTMLPieChartObject\n    # $appRegistrationWithOwnerChart.Title = \"App registration owners\"\n    # $appRegistrationWithOwnerChart.Size.Height = 400\n    # $appRegistrationWithOwnerChart.Size.width = 400\n    # $appRegistrationWithOwnerChart.ChartStyle.ChartType = 'doughnut'\n    # $appRegistrationWithOwnerChart.ChartStyle.ColorSchemeName = \"ColorScheme3\"\n    # $appRegistrationWithOwnerChart.DataDefinition.DataNameColumnName = 'Name'\n    # $appRegistrationWithOwnerChart.DataDefinition.DataValueColumnName = 'Count'\n\n    # $report.Add( $( Get-HTMLContentOpen -HeaderText \"Owners Summary\") )\n    \n    # $report.Add( $(Get-HTMLColumn1of2 ) )\n    # $report.Add( $( Get-HTMLPieChart -ChartObject $appRegistrationWithOwnerChart -DataSet $appRegistrationWithOwnerChartTable) )\n    # $report.Add( $(Get-HTMLColumnClose ) )\n    # # $report.Add( $(Get-HTMLColumn2Of2 ) )\n    # # $report.Add( $( Get-HTMLPieChart -ChartObject $neverExpirePasswordPieChart -DataSet $neverExpirePasswordTable) )\n    # # $report.Add( $(Get-HTMLColumnClose ) )\n    \n    # $report.Add( $( Get-HTMLContentClose) )\n    \n    #endregion\n\n    # #region WITH OWNERS TABLE\n\n    # $appRegistrationWithOwnerTable = New-Object -TypeName 'System.Collections.Generic.List[System.Object]'\n\n    # $AppRegistrationWithOwner | Sort-Object -Property displayName, id | ForEach-Object -Process {\n    #     $appRegistrationWithOwnerTable.Add(\n    #         ($_ | Select-Object -Property DisplayName, ObjectId, CreatedDateTime, OwnersUpns, ExpiredPasswordCredentialsCount, ValidPasswordCredentialsCount, ExpiredKeyCredentialsCount, ValidKeyCredentialsCount )\n    #     )\n    # }\n    \n    # $report.Add( $( Get-HTMLContentOpen -HeaderText \"WITH OWNER\") )\n    # $report.Add( $( Get-HTMLContentDataTable -ArrayOfObjects $appRegistrationWithOwnerTable ) )\n    # $report.Add( $( Get-HTMLContentClose) )\n    # #endregion\n\n    Save-HTMLReport -ReportContent $report -ReportName $reportName -ReportPath $reportExportPath\n}\n\nfunction New-AppRegistrationXlsxReport {\n    [CmdletBinding()]\n    param (\n        [Parameter()]\n        [array]\n        $AppRegistration,\n\n        [Parameter()]\n        [array]\n        $AppRegistrationWithOwner,\n        \n        [Parameter()]\n        [array]\n        $AppRegistrationWithoutOwner,\n\n        [Parameter()]\n        [array]\n        $PasswordCredentialsExpired,\n\n        [Parameter()]\n        [array]\n        $KeyCredentialsExpired,\n\n        [Parameter()]\n        [array]\n        $PasswordCredentialsExpiringSoon,\n\n        [Parameter()]\n        [array]\n        $KeyCredentialsExpiringSoon,\n\n        [Parameter()]\n        [array]\n        $PasswordCredentialsLongExpire,\n\n        [Parameter()]\n        [array]\n        $KeyCredentialsLongExpire,\n\n        [Parameter()]\n        [string]\n        $ReportExportPath\n    )\n\n    $excelReportPath = \"$($ReportExportPath)/app-reg-report.xlsx\"\n\n    if (Test-Path -Path $excelReportPath) {\n        Remove-Item -Path $excelReportPath -Force\n    }\n\n\n    $PasswordCredentialsExpired `\n    | Sort-Object -Property AppDisplayName, AppObjectId `\n    | Select-Object -Property AppDisplayName, AppObjectId, Description, Expire, OwnersUpns `\n    | Export-Excel $excelReportPath -WorksheetName 'EXPIRED PASSWORD' -AutoSize -AutoFilter\n\n    $KeyCredentialsExpired `\n    | Sort-Object -Property AppDisplayName, AppObjectId`\n    | Select-Object -Property AppDisplayName, AppObjectId, Description, Expire, OwnersUpns `\n    | Export-Excel $excelReportPath -WorksheetName 'EXPIRED KEY' -AutoSize -AutoFilter\n\n    $PasswordCredentialsExpiringSoon `\n    | Sort-Object -Property AppDisplayName, AppObjectId`\n    | Select-Object -Property AppDisplayName, AppObjectId, Description, Expire, OwnersUpns `\n    | Export-Excel $excelReportPath -WorksheetName 'EXPIRING SOON PASSWORD' -AutoSize -AutoFilter\n\n    $KeyCredentialsExpiringSoon `\n    | Sort-Object -Property AppDisplayName, AppObjectId `\n    | Select-Object -Property AppDisplayName, AppObjectId, Description, Created, Expire, OwnersUpns `\n    | Export-Excel $excelReportPath -WorksheetName 'EXPIRING SOON KEY' -AutoSize -AutoFilter\n\n    $PasswordCredentialsLongExpire  `\n    | Sort-Object -Property AppDisplayName, AppObjectId`\n    | Select-Object -Property AppDisplayName, AppObjectId, Description, Expire, OwnersUpns `\n    | Export-Excel $excelReportPath -WorksheetName 'LONG EXPIRE PASSWORD' -AutoSize -AutoFilter\n\n    $KeyCredentialsLongExpire `\n    | Sort-Object -Property AppDisplayName, AppObjectId`\n    | Select-Object -Property AppDisplayName, AppObjectId, Description, Expire, OwnersUpns `\n    | Export-Excel $excelReportPath -WorksheetName 'LONG EXPIRE KEY' -AutoSize -AutoFilter\n\n    $AppRegistrationWithoutOwner `\n    | Sort-Object -Property DisplayName, ObjectId\n    | Select-Object -Property DisplayName, ObjectId, CreatedDateTime, ExpiredPasswordCredentialsCount, ValidPasswordCredentialsCount, ExpiredKeyCredentialsCount, ValidKeyCredentialsCount `\n    | Export-Excel $excelReportPath -WorksheetName 'MISSING OWNERS' -AutoSize -AutoFilter -ClearSheet\n\n    # $AppRegistrationWithOwner `\n    # | Sort-Object -Property DisplayName, ObjectId `\n    # | Select-Object -Property DisplayName, ObjectId, CreatedDateTime, OwnersUpns, ExpiredPasswordCredentialsCount, ValidPasswordCredentialsCount, ExpiredKeyCredentialsCount, ValidKeyCredentialsCount `\n    # | Export-Excel $excelReportPath -WorksheetName 'WITH OWNERS' -AutoSize -AutoFilter\n\n}\n\n#endregion\n\n$appRegistrationConfigurationsRaw = Get-AppRegistrationConfiguration -AzureAdExportPath $exportPath\n$appRegistrationConfigurations = $appRegistrationConfigurationsRaw | ForEach-Object -Process {\n    [PSCustomObject]@{\n        DisplayName                     = $_.displayName\n        ObjectId                        = $_.id\n        CreatedDateTime                 = $_.createdDateTime\n        HasOwner                        = $_.owners.Count -ne 0\n        Owners                          = $_.owners\n        OwnersUpns                      = $_.owners.userPrincipalName -join ','\n        KeyCredentials                  = $_.keyCredentials\n        KeyCredentialsCount             = $_.keyCredentials.Count\n        HasExpiredKeyCredentials        = $_.keyCredentials | Where-Object -FilterScript { (Get-Date) -gt $_.endDateTime }\n        ExpiredKeyCredentialsCount      = ($_.keyCredentials | Where-Object -FilterScript { (Get-Date) -gt $_.endDateTime }).Count\n        ValidKeyCredentialsCount        = ($_.keyCredentials | Where-Object -FilterScript { $_.endDateTime -gt (Get-Date) }).Count\n        PasswordCredentials             = $_.passwordCredentials\n        PasswordCredentialsCount        = $_.passwordCredentials.Count\n        HasExpiredPasswordCredentials   = $_.passwordCredentials | Where-Object -FilterScript { (Get-Date) -gt $_.endDateTime }\n        ExpiredPasswordCredentialsCount = ($_.passwordCredentials | Where-Object -FilterScript { (Get-Date) -gt $_.endDateTime }).Count\n        ValidPasswordCredentialsCount   = ($_.passwordCredentials | Where-Object -FilterScript { $_.endDateTime -gt (Get-Date) }).Count\n    }\n}\n\n$appRegistrationPasswordCredentialsConfiguration = Get-AppRegistrationPasswordCredentialsConfiguration -AppRegistrationConfiguration $appRegistrationConfigurationsRaw\n$appRegistrationKeyCredentialsConfiguration = Get-AppRegistrationKeyCredentialsConfiguration -AppRegistrationConfiguration $appRegistrationConfigurationsRaw\n\n$reportInput = @{\n    OwnerMissing                    = $appRegistrationConfigurations | Where-Object -Property HasOwner -eq $false \n    OwnerExist                      = $appRegistrationConfigurations | Where-Object -Property HasOwner -eq $true \n    \n    PasswordCredentialsExpired      = $appRegistrationPasswordCredentialsConfiguration | Where-Object -Property IsExpired -eq $true\n    KeyCredentialsExpired           = $appRegistrationKeyCredentialsConfiguration | Where-Object -Property IsExpired -eq $true\n\n    PasswordCredentialsExpiringSoon = $appRegistrationPasswordCredentialsConfiguration | Where-Object -Property IsExpired -eq $false  | Where-Object -Property WillExpireInThreeMonths -eq $true\n    KeyCredentialsExpiringSoon      = $appRegistrationKeyCredentialsConfiguration | Where-Object -Property IsExpired -eq $false  | Where-Object -Property WillExpireInThreeMonths -eq $true\n\n    PasswordCredentialsLongExpire   = $appRegistrationPasswordCredentialsConfiguration | Where-Object -Property HasLongExpirationDate -eq $true\n    KeyCredentialsLongExpire        = $appRegistrationKeyCredentialsConfiguration | Where-Object -Property HasLongExpirationDate -eq $true\n}\n\n$appRegistrationReportParameters = @{\n    AppRegistration                 = $appRegistrationConfiguration\n    AppRegistrationWithoutOwner     = $reportInput.OwnerMissing\n    AppRegistrationWithOwner        = $reportInput.OwnerExist\n    PasswordCredentialsExpired      = $reportInput.PasswordCredentialsExpired\n    KeyCredentialsExpired           = $reportInput.KeyCredentialsExpired\n    PasswordCredentialsExpiringSoon = $reportInput.PasswordCredentialsExpiringSoon\n    KeyCredentialsExpiringSoon      = $reportInput.KeyCredentialsExpiringSoon\n    PasswordCredentialsLongExpire   = $reportInput.PasswordCredentialsLongExpire\n    KeyCredentialsLongExpire        = $reportInput.KeyCredentialsLongExpire\n    ReportExportPath                = ($ENV:BUILD_ARTIFACTSTAGINGDIRECTORY ? $ENV:BUILD_ARTIFACTSTAGINGDIRECTORY : '.')\n}\n\n# Write-Host ($appRegistrationReportParameters | ConvertTo-Json)\n\n# Write to the Azure Functions log stream.\n# Write-Host \"PowerShell HTTP trigger function processed a request.\"\n\n# Interact with query parameters or the body of the request.\n# $name = $Request.Query.Name\n# if (-not $name) {\n#     $name = $Request.Body.Name\n# }\n\n# $body = \"This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.\"\n\n# if ($name) {\n#     $body = \"Hello, $name. This HTTP triggered function executed successfully.\"\n# }\n\n# Associate values to output bindings by calling 'Push-OutputBinding'.\n# Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{\n#         StatusCode = [HttpStatusCode]::OK\n#         Body       = $body\n#     })\n\n\n# Set-ActionGroups\n\n#region CLEAN ALERTS AND ACTION GROUPS\n\n$allScheduledQueryRule = Get-AzScheduledQueryRule -ResourceGroupName $resourceGroupName\n$allActionGroups = Get-AzActionGroup -ResourceGroupName $resourceGroupName \n($allScheduledQueryRule + $allActionGroups) | Remove-AzResource -Force -AsJob\n\n#endregion\n\n$longExpirationDateThreshold = 365\n$shortExpirationDateThreshold = 90\n$alertSeverity = \"3\"\n$defaultEmailReciverObjectIds = @('5844d171-22d9-4340-9c88-e395e220d7b9')\n\n[array]$appRegsWithOwner = $appRegistrationConfigurations | Where-Object -Property Owners -NE $null\n[array]$appRegsWithoutOwner = $appRegistrationConfigurations | Where-Object -Property Owners -EQ $null\n\n\nforeach ($appRegistration in $appRegsWithOwner) {\n    #region RESOURCE NAMING\n    \n    $md5 = New-Object -TypeName System.Security.Cryptography.MD5CryptoServiceProvider\n    $utf8 = New-Object -TypeName System.Text.UTF8Encoding\n    $hash = [System.BitConverter]::ToString($md5.ComputeHash($utf8.GetBytes($appRegistration.ObjectId)))\n\n    $hashSuffix = \"$( $hash.Replace('-','').ToLower() )\"\n\n    $actionGroupName = \"ag-$( $hashSuffix )\"\n    $groupShortName = $actionGroupName.Substring(0, 12)\n\n    [array]$emailReceivers = @()\n\n    foreach ($owner in $appRegistration.Owners) { \n        $mail = (Get-AzADUser -ObjectId $owner.id).Mail\n\n        $emailReceiver = @{\n            name                 = $owner.displayName\n            emailAddress         = $mail\n            useCommonAlertSchema = $true\n        }\n\n        $emailReceivers += $emailReceiver\n    }\n\n    $emailReceivers = @(\n        @{\n            name                 = 'KamilWiecek'\n            emailAddress         = 'kwiec@softserveinc.com'\n            useCommonAlertSchema = $true\n        }\n    )\n\n    $templateParameterObject = @{\n        actionGroupName = $actionGroupName\n        groupShortName  = $groupShortName\n        emailReceivers  = $emailReceivers\n        tags            = @{\n            isServicePrincipalMonitoring = '1'\n        }\n    }\n\n    $resourceGroupName = 'rg-azureadexport'\n    $templateFile = './actionGroup.json'\n\n\n    $deploymentParameters = @{\n        Name                    = (\"deployment-$(((Get-Date).ToUniversalTime()).ToString('MMdd-HHmm-ss'))-$( (New-Guid).Guid.Substring(0,3) )\" )\n        ResourceGroupName       = $resourceGroupName\n        TemplateFile            = $templateFile\n        TemplateParameterObject = $templateParameterObject\n        Mode                    = 'Incremental'\n    }\n\n    New-AzResourceGroupDeployment @deploymentParameters #-AsJob\n\n    $longExpirationQuery = @\"\nAppRegistration_CL\n| where TimeGenerated > startofday(ago(1m))\n| extend KeyAndPasswordSecrets = array_concat(parse_json(PasswordCredentials_s), parse_json(KeyCredentials_s))\n| where array_length(KeyAndPasswordSecrets) > 0 \n| mv-expand Secret = KeyAndPasswordSecrets\n| extend ExpirationDate = make_datetime(Secret.endDateTime)\n| order by make_datetime(ExpirationDate)\n| summarize arg_max(ExpirationDate, *) by ObjectId_g\n| where ExpirationDate > now(LONG_EXPIRATION_DATE_THRESHOLDd)\n| project ObjectId_g, DisplayName_s, MaxExpirationDate = ExpirationDate, Secret\n| where ObjectId_g == 'REPLACE_OBJECT_ID'\n\"@ -replace 'REPLACE_OBJECT_ID', $appRegistration.ObjectId -replace 'LONG_EXPIRATION_DATE_THRESHOLD', $longExpirationDateThreshold \n\n    $shortExpirationQuery = @\"\nAppRegistration_CL\n| where  TimeGenerated > startofday(ago(1m))\n| extend KeyAndPasswordSecrets = array_concat(parse_json(PasswordCredentials_s), parse_json(KeyCredentials_s))\n| where array_length( KeyAndPasswordSecrets) > 0 \n| mv-expand Secret = KeyAndPasswordSecrets\n| extend ExpirationDate = make_datetime(Secret.endDateTime)\n| where ExpirationDate > startofday(ago(1m))\n| order by make_datetime(ExpirationDate)\n| summarize arg_min(ExpirationDate, *) by ObjectId_g\n| order by ExpirationDate asc\n| project  ObjectId_g, DisplayName_s, MinExpirationDate = ExpirationDate, OwnersUpns_s\n| where ExpirationDate > now(SHORT_EXPIRATION_DATE_THRESHOLDd)\n| where ObjectId_g == 'REPLACE_OBJECT_ID'\n\"@ -replace 'REPLACE_OBJECT_ID', $appRegistration.ObjectId -replace 'SHORT_EXPIRATION_DATE_THRESHOLD', $shortExpirationDateThreshold\n\n\n    $logAnalyticsAlertsParametersObject = @{\n        omsWorkspaceName = 'log-azureadexport'\n        actionGroupName  = $actionGroupName\n        alerts           = @(\n            @{\n                Alert       = @{\n                    Name               = \"alert-longexpiration-$( $hashSuffix )\"\n                    ThresholdValue     = 0\n                    Description        = \"Monitors long credentials expiration date for App Registration $($appRegistration.DisplayName) $($appRegistration.ObjectId)\"\n                    ThresholdOperator  = \"GreaterThan\"\n                    CustomEmailSubject = \"Your App Regsitration has long credential expiration date set\"\n                    Severity           = $alertSeverity\n                    ThrottlingInMin    = 1400\n                }\n                SavedSearch = @{ \n                    Query = ($longExpirationQuery)\n                }\n                Schedule    = @{\n                    Interval = 1440\n                    TimeSpan = 1440\n                }\n            },\n            @{\n                Alert       = @{\n                    Name               = \"alert-expirationsoon-$( $hashSuffix )\"\n                    ThresholdValue     = 0\n                    Description        = \"Monitors App Registration $($appRegistration.DisplayName) $($appRegistration.ObjectId) for credentials expiration\"\n                    ThresholdOperator  = \"GreaterThan\"\n                    CustomEmailSubject = \"Your App Regsitration credentials will expire soon\"\n                    Severity           = $alertSeverity\n                    ThrottlingInMin    = 1400\n                }\n                SavedSearch = @{ \n                    Query = ($shortExpirationQuery)\n                }\n                Schedule    = @{\n                    Interval = 1440\n                    TimeSpan = 1440\n                }\n            }\n        )\n    }\n\n    $logAnalyticsAlertstemplateFile = './logAnalyticsAlerts.json'\n\n    $deploymentParameters = @{\n        Name                    = (\"deployment-$(((Get-Date).ToUniversalTime()).ToString('MMdd-HHmm-ss'))-$( (New-Guid).Guid.Substring(0,3) )\" )\n        ResourceGroupName       = $resourceGroupName\n        TemplateFile            = $logAnalyticsAlertstemplateFile\n        TemplateParameterObject = $logAnalyticsAlertsParametersObject\n        Mode                    = 'Incremental'\n    }\n\n    New-AzResourceGroupDeployment @deploymentParameters #-AsJob\n}\n\nif ($appRegsWithoutOwner.Count -gt 0 ) {\n    return;\n}\n\n#region MISSING OWNER \n\n$resourceNameSuffix = \"noownerspcredentials\"\n\n$actionGroupName = \"ag-$( resourceNameSuffix )\"\n$groupShortName = $actionGroupName.Substring(0, 12)\n\n[array]$emailReceivers = @()\n\nforeach ($objectId in $defaultEmailReciverObjectIds ) { \n    $adUser = Get-AzADUser -ObjectId $objectId\n\n    $emailReceiver = @{\n        name                 = $adUser.DisplayName\n        emailAddress         = $adUser.Mail\n        useCommonAlertSchema = $true\n    }\n\n    $emailReceivers += $emailReceiver\n}\n\n$emailReceivers = @(\n    @{\n        name                 = 'KamilWiecek'\n        emailAddress         = 'kwiec@softserveinc.com'\n        useCommonAlertSchema = $true\n    }\n)\n\n$actionGroupTemplateParameterObject = @{\n    actionGroupName = $actionGroupName\n    groupShortName  = $groupShortName\n    emailReceivers  = $emailReceivers\n    tags            = @{\n        isServicePrincipalMonitoring = '1'\n    }\n}\n\n$resourceGroupName = 'rg-azureadexport'\n$actionGroupTemplateFile = './actionGroup.json'\n\n$longExpirationQuery = @\"\nAppRegistration_CL\n| where TimeGenerated > startofday(ago(1m))\n| extend KeyAndPasswordSecrets = array_concat(parse_json(PasswordCredentials_s), parse_json(KeyCredentials_s))\n| where array_length(KeyAndPasswordSecrets) > 0 \n| mv-expand Secret = KeyAndPasswordSecrets\n| extend ExpirationDate = make_datetime(Secret.endDateTime)\n| order by make_datetime(ExpirationDate)\n| summarize arg_max(ExpirationDate, *) by ObjectId_g\n| where ExpirationDate > now(LONG_EXPIRATION_DATE_THRESHOLDd)\n| project ObjectId_g, DisplayName_s, MaxExpirationDate = ExpirationDate, Secret\n| where ObjectId_g in (REPLACE_OBJECT_IDS)\n\"@ -replace 'LONG_EXPIRATION_DATE_THRESHOLD', $longExpirationDateThreshold \n\n$longExpirationQuery = $longExpirationQuery -replace 'REPLACE_OBJECT_IDS', \"'$( ($appRegsWithoutOwner.ObjectId -join \"','\") )'\"\n\n$shortExpirationQuery = @\"\nAppRegistration_CL\n| where  TimeGenerated > startofday(ago(1m))\n| extend KeyAndPasswordSecrets = array_concat(parse_json(PasswordCredentials_s), parse_json(KeyCredentials_s))\n| where array_length( KeyAndPasswordSecrets) > 0 \n| mv-expand Secret = KeyAndPasswordSecrets\n| extend ExpirationDate = make_datetime(Secret.endDateTime)\n| where ExpirationDate > startofday(ago(1m))\n| order by make_datetime(ExpirationDate)\n| summarize arg_min(ExpirationDate, *) by ObjectId_g\n| order by ExpirationDate asc\n| project  ObjectId_g, DisplayName_s, MinExpirationDate = ExpirationDate, OwnersUpns_s\n| where ExpirationDate > now(SHORT_EXPIRATION_DATE_THRESHOLDd)\n| where ObjectId_g in (REPLACE_OBJECT_IDS)\n\"@ -replace 'SHORT_EXPIRATION_DATE_THRESHOLD', $shortExpirationDateThreshold\n$shortExpirationQuery = $shortExpirationQuery -replace 'REPLACE_OBJECT_IDS', \"'$( ($appRegsWithoutOwner.ObjectId -join \"','\") )'\"\n\n$deploymentParameters = @{\n    Name                    = ('deployment' + '-' + ((Get-Date).ToUniversalTime()).ToString('MMdd-HHmm-ss'))\n    ResourceGroupName       = $resourceGroupName\n    TemplateFile            = $actionGroupTemplateFile\n    TemplateParameterObject = $actionGroupTemplateParameterObject\n    Mode                    = 'Incremental'\n}\n\nNew-AzResourceGroupDeployment @deploymentParameters\n\n$logAnalyticsAlertsParametersObject = @{\n    omsWorkspaceName = 'log-azureadexport'\n    actionGroupName  = $actionGroupName\n    tags             = @{\n        isServicePrincipalMonitoring = '1'\n    }\n    alerts           = @(\n        @{\n            Alert       = @{\n                Name               = \"alert-longexpiration-$( $resourceNameSuffix )\"\n                ThresholdValue     = 0\n                Description        = \"Monitors long credentials expiration date for App Registrations without owner\"\n                ThresholdOperator  = \"GreaterThan\"\n                CustomEmailSubject = \"No owner App Regsitration has long credential expiration date set\"\n                Severity           = $alertSeverity\n                ThrottlingInMin    = 1400\n            }\n            SavedSearch = @{ \n                Query = ($longExpirationQuery)\n            }\n            Schedule    = @{\n                Interval = 1440\n                TimeSpan = 1440\n            }\n        },\n        @{\n            Alert       = @{\n                Name               = \"alert-expirationsoon-$( $resourceNameSuffix )\"\n                ThresholdValue     = 0\n                Description        = \"Monitors App Registration without owner for credentials expiration\"\n                ThresholdOperator  = \"GreaterThan\"\n                CustomEmailSubject = \"No owner App Regsitration credentials will expire soon\"\n                Severity           = $alertSeverity\n                ThrottlingInMin    = 1400\n            }\n            SavedSearch = @{ \n                Query = ($shortExpirationQuery)\n            }\n            Schedule    = @{\n                Interval = 1440\n                TimeSpan = 1440\n            }\n        }\n    )\n}\n\n$logAnalyticsAlertstemplateFile = './logAnalyticsAlerts.json'\n\n$deploymentParameters = @{\n    Name                    = ('deployment' + '-' + ((Get-Date).ToUniversalTime()).ToString('MMdd-HHmm-ss'))\n    ResourceGroupName       = $resourceGroupName\n    TemplateFile            = $logAnalyticsAlertstemplateFile\n    TemplateParameterObject = $logAnalyticsAlertsParametersObject\n    Mode                    = 'Incremental'\n}\n\nNew-AzResourceGroupDeployment @deploymentParameters\n\n#endregion\n\n# #region \n# $resourceGroupName = 'rg-azureadexport'\n\n# $allActionGroups = Get-AzActionGroup -ResourceGroupName $resourceGroupName \n\n# $spMonitoringActionGroups = $allActionGroups | Where-Object -FilterScript { $_.Tags.isServicePrincipalMonitoring -eq '1' }\n\n\n# #endregion\n"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('functionName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "logAnalyticsResourceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]",
+              "metadata": {
+                "description": "The resource ID of the deployed log analytics workspace"
+              }
+            },
+            "logAnalyticsResourceGroup": {
+              "type": "string",
+              "value": "[resourceGroup().name]",
+              "metadata": {
+                "description": "The resource group where the log analytics will be deployed"
+              }
+            },
+            "logAnalyticsName": {
+              "type": "string",
+              "value": "[variables('logAnalyticsWorkspaceName')]",
+              "metadata": {
+                "description": "The name of the deployed log analytics workspace"
+              }
+            },
+            "logAnalyticsWorkspaceId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))).customerId]",
+              "metadata": {
+                "description": "The ID associated with the workspace"
+              }
+            },
+            "functionIdentityObjectId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Web/sites', variables('functionName')), '2021-01-15', 'full').identity.principalId]",
+              "metadata": {
+                "description": "The ID associated with the workspace"
+              }
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', 'rg-spmonitoring')]"
+      ]
+    }
+  ]
+}
